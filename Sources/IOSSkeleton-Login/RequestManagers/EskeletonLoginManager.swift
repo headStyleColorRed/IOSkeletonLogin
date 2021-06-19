@@ -11,8 +11,8 @@ import ObjectMapper
 
 protocol LoginManager {
 	var baseURL: String { get set }
-	func userLoginIntent(_ userLoginData: LoginModel, succes: @escaping(RequestResponseDTO) -> (), error: @escaping(String?) -> ())
-	func userRegisterIntent(_ userLoginData: LoginModel, succes: @escaping(RequestResponseDTO) -> (), error: @escaping(String?) -> ())
+	func userLoginIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ())
+	func userRegisterIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ())
 }
 
 class EskeletonLoginManager: LoginManager {
@@ -29,7 +29,7 @@ class EskeletonLoginManager: LoginManager {
 	
 	
 	// MARK: - LOGIN
-	func userLoginIntent(_ userLoginData: LoginModel, succes: @escaping(RequestResponseDTO) -> (), error: @escaping(String?) -> ()) {
+	func userLoginIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ()) {
 		let loginApi = baseURL + RequestURL.login.rawValue
 		let headers: HTTPHeaders = ["Content-Type":"application/json"]
 		let parameter = ["email": userLoginData.username, "password": userLoginData.password]
@@ -38,13 +38,13 @@ class EskeletonLoginManager: LoginManager {
 			.responseJSON { (response) in
 				guard let safeData = response.data,
 					  let dataString = String(data: safeData, encoding: .utf8),
-					  let requestResponse = RequestResponseDTO(JSONString: dataString) else {
-					error(response.error?.localizedDescription)
+					  let requestResponse = LoginRequestResponseDTO(JSONString: dataString) else {
+                    error(LoginError(status: "418", data: response.error?.localizedDescription))
 					return
 				}
 				
 				guard requestResponse.code == "200" else {
-					error("Request response code is \(requestResponse.code ?? "unknown")")
+                    error(LoginError(status: requestResponse.code, data: requestResponse.status))
 					return
 				}
 				succes(requestResponse)
@@ -52,7 +52,7 @@ class EskeletonLoginManager: LoginManager {
 	}
 	
 	// MARK: - REGISTER
-	func userRegisterIntent(_ userLoginData: LoginModel, succes: @escaping(RequestResponseDTO) -> (), error: @escaping(String?) -> ()) {
+	func userRegisterIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ()) {
 		let loginApi = baseURL + RequestURL.register.rawValue
 		let headers: HTTPHeaders = ["Content-Type":"application/json"]
 		let parameter = ["email": userLoginData.username,
@@ -63,13 +63,13 @@ class EskeletonLoginManager: LoginManager {
 			.responseJSON { (response) in
 				guard let safeData = response.data,
 					  let dataString = String(data: safeData, encoding: .utf8),
-					  let requestResponse = RequestResponseDTO(JSONString: dataString) else {
-					error(response.error?.localizedDescription)
+					  let requestResponse = LoginRequestResponseDTO(JSONString: dataString) else {
+                    error(LoginError(status: "418", data: response.error?.localizedDescription))
 					return
 				}
 				
 				guard requestResponse.code == "200" else {
-					error("Request response code is \(requestResponse.code ?? "unknown")")
+                    error(LoginError(status: requestResponse.code, data: requestResponse.status))
 					return
 				}
 				succes(requestResponse)

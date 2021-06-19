@@ -13,7 +13,7 @@ enum NavigationFlow {
 
 // MARK: - Main view
 public struct LoginView: View {
-    @ObservedObject var viewModel = LoginViewModel(baseUrl: "http://localhost:8888")
+    @ObservedObject var viewModel: LoginViewModel
     @State var userName = String()
     @State var password = String()
     @State var repeatPassword = String()
@@ -56,26 +56,28 @@ public struct LoginView: View {
                 Spacer(minLength: 0)
             }
             .background(primaryColor.ignoresSafeArea(.all, edges: .all))
-            .alert(item: $viewModel.error) { error in
-                Alert(title: Text(errorText), message: Text(error.status ?? ""), dismissButton: .default(Text("Got it!")))
-            }
             if viewModel.loading {
                 LoadingView()
             }
-        }
+        }.onChange(of: viewModel.registerSucess, perform: { value in
+            guard value == true else { return }
+            currentView = .login
+        })
     }
 
-    public init(primaryColor: Color, secondaryColor: Color, backgroundImage: String) {
+    public init(primaryColor: Color, secondaryColor: Color, backgroundImage: String,
+                baseUrl: String, delegate: LoginProtocol?) {
         self.primaryColor = primaryColor
         self.secondaryColor = secondaryColor
         self.backgroundImage = backgroundImage
+        self.viewModel = LoginViewModel(baseUrl: baseUrl, delegate: delegate)
     }
 
     private func submitAction() {
         if currentView == .login {
             viewModel.userLoginIntent(username: userName, password: password)
         } else {
-            viewModel.userRegisterIntent(username: userName, password: password)
+            viewModel.userRegisterIntent(username: userName, password: password, repeatPassword: repeatPassword)
         }
     }
 

@@ -7,21 +7,22 @@
 
 import Foundation
 
-protocol LoginViewModelProtocol {
-	func loginIntentResult(response: RequestResponse)
+public protocol LoginProtocol {
+	func loginIntentResult(response: ResponseResult)
 }
 
 class LoginViewModel: ObservableObject {
 	@Published var model = LoginModel()
-	@Published var error: RequestResponse?
-	@Published var loading = Bool()
+    @Published var loading: Bool = false
+    @Published var registerSucess = false
 	
-	var delegate: LoginViewModelProtocol?
+	var delegate: LoginProtocol?
 	private var manager: LoginManager? = nil
 	
 	
-	init(baseUrl: String) {
+    init(baseUrl: String, delegate: LoginProtocol?) {
 		manager = EskeletonLoginManager(baseUrl: baseUrl)
+        self.delegate = delegate
 	}
 
 }
@@ -29,37 +30,44 @@ class LoginViewModel: ObservableObject {
 extension LoginViewModel {
 	// MARK: - LOGIN
 	func userLoginIntent(username: String, password: String) {
-		guard userDataisValid(username: username, password: password, actionType: .login) else { return }
+		guard userDataisValid(username: username, password: password, actionType: .login) else {
+            delegate?.loginIntentResult(response: .invalidUsername)
+            return
+        }
 		
 		loading = true
 		manager?.userLoginIntent(LoginModel(username: username, password: password)) { (response) in
-			self.loading = false
-			print("Success!!!!")
+            self.loading = false
+            let loginUser = UserResult(username: username, token: response.token ?? "")
+            self.delegate?.loginIntentResult(response: .loginSuccess(loginUser))
 		} error: { (error) in
 			self.loading = false
-			self.error = RequestResponse(status: error)
-			print(error ?? "")
+            self.delegate?.loginIntentResult(response: .serverError(error))
 		}
 
 	}
 	
 	// MARK: - REGISTER
-	func userRegisterIntent(username: String, password: String) {
-		guard userDataisValid(username: username, password: password, actionType: .signup) else { return }
+    func userRegisterIntent(username: String, password: String, repeatPassword: String) {
+		guard userDataisValid(username: username, password: password, actionType: .signup),
+              repeatPassword == password else {
+            delegate?.loginIntentResult(response: .invalidUsername)
+            return
+        }
 		
 		loading = true
 		manager?.userRegisterIntent(LoginModel(username: username, password: password)) { (response) in
 			self.loading = false
 			if response.code == "200" {
-				print("Success!!!!")
+                self.delegate?.loginIntentResult(response: .registerSuccess)
+                self.registerSucess = true
 			} else {
-				self.error = RequestResponse(response: response)
+                self.delegate?.loginIntentResult(response: .genericError)
 			}
 				
 		} error: { (error) in
 			self.loading = false
-			self.error = RequestResponse(status: error)
-			print(error ?? "")
+            self.delegate?.loginIntentResult(response: .serverError(error))
 		}
 
 	}

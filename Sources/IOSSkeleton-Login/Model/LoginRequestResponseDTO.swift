@@ -1,5 +1,5 @@
 //
-//  RequestDTO.swift
+//  LoginRequestResponseDTO.swift
 //  IOSKELETON_LOGIN
 //
 //  Created by Rodrigo Labrador on 21/02/2021.
@@ -8,16 +8,16 @@
 import Foundation
 import ObjectMapper
 
-class RequestResponseDTO: Mappable {
+class LoginRequestResponseDTO: Mappable {
 	var code: String?
 	var status: String?
-	var data: String?
+	var token: String?
 	
 	public required init?(map: Map) { }
 	
 	public func mapping(map: Map) {
 		code <- map["code"]
 		status <- map["status"]
-		data <- map["data"]
+        token <- map["token"]
 	}
 }
