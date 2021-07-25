@@ -8,16 +8,16 @@
 import Foundation
 import ObjectMapper
 
-class LoginRequestResponseDTO: Mappable {
-	var code: String?
-	var status: String?
-	var token: String?
+public class LoginRequestResponseDTO: Mappable {
+	public var code: String?
+	public var message: String?
+	public var token: String?
 	
 	public required init?(map: Map) { }
 	
 	public func mapping(map: Map) {
 		code <- map["code"]
-		status <- map["status"]
+        message <- map["status"]
         token <- map["token"]
 	}
 }

@@ -9,27 +9,21 @@ import Foundation
 import Alamofire
 import ObjectMapper
 
-protocol LoginManager {
-	var baseURL: String { get set }
-	func userLoginIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ())
-	func userRegisterIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ())
-}
-
-class EskeletonLoginManager: LoginManager {
-	var baseURL: String
+public class EskeletonLoginManager: EskeletonLoginManagerProtocol {
+    public var baseURL: String
 	
 	enum RequestURL: String {
 		case login = "/login/log_user"
 		case register = "/register/register_user"
 	}
 	
-	init(baseUrl: String) {
+    public init(baseUrl: String) {
 		self.baseURL = baseUrl
 	}
 	
 	
 	// MARK: - LOGIN
-	func userLoginIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ()) {
+    public func userLoginIntent(_ userLoginData: LoginModel, completion: @escaping LoginIntentHandler) {
 		let loginApi = baseURL + RequestURL.login.rawValue
 		let headers: HTTPHeaders = ["Content-Type":"application/json"]
 		let parameter = ["email": userLoginData.username, "password": userLoginData.password]
@@ -39,20 +33,22 @@ class EskeletonLoginManager: LoginManager {
 				guard let safeData = response.data,
 					  let dataString = String(data: safeData, encoding: .utf8),
 					  let requestResponse = LoginRequestResponseDTO(JSONString: dataString) else {
-                    error(LoginError(status: "418", data: response.error?.localizedDescription))
+                    let error = response.error?.localizedDescription ?? "Unknown Error"
+                    completion(.failure(error.asError))
 					return
 				}
 				
 				guard requestResponse.code == "200" else {
-                    error(LoginError(status: requestResponse.code, data: requestResponse.status))
+                    let error = requestResponse.message ?? "Unknown Error"
+                    completion(.failure(error.asError))
 					return
 				}
-				succes(requestResponse)
+                completion(.success(requestResponse))
 		}
 	}
-	
+
 	// MARK: - REGISTER
-	func userRegisterIntent(_ userLoginData: LoginModel, succes: @escaping(LoginRequestResponseDTO) -> (), error: @escaping(LoginError?) -> ()) {
+    public func userRegisterIntent(_ userLoginData: LoginModel, completion: @escaping LoginIntentHandler) {
 		let loginApi = baseURL + RequestURL.register.rawValue
 		let headers: HTTPHeaders = ["Content-Type":"application/json"]
 		let parameter = ["email": userLoginData.username,
@@ -64,15 +60,17 @@ class EskeletonLoginManager: LoginManager {
 				guard let safeData = response.data,
 					  let dataString = String(data: safeData, encoding: .utf8),
 					  let requestResponse = LoginRequestResponseDTO(JSONString: dataString) else {
-                    error(LoginError(status: "418", data: response.error?.localizedDescription))
+                    let error = response.error?.localizedDescription ?? "Unknown Error"
+                    completion(.failure(error.asError))
 					return
 				}
 				
 				guard requestResponse.code == "200" else {
-                    error(LoginError(status: requestResponse.code, data: requestResponse.status))
+                    let error = requestResponse.message ?? "Unknown Error"
+                    completion(.failure(error.asError))
 					return
 				}
-				succes(requestResponse)
+                completion(.success(requestResponse))
 		}
 	}
 }
